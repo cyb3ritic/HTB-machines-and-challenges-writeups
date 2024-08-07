@@ -1,5 +1,3 @@
-
-
 # <center> Busqueda </center>
 <p align="center"><img src="../.medias/busqueda/busqueda_logo.png"></p>
 
