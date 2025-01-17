@@ -1,5 +1,5 @@
 # <center>Editorial</center>
-<p align="center"><img src="../.medias/editorial/editorial_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/editorial_logo.png"></p>
 
 Hey bud! Today I'll walk you through another easy labeled linux based machine `editorial`.
 
@@ -42,57 +42,57 @@ Nmap done: 1 IP address (1 host up) scanned in 91.63 seconds
 ### feroxbuster enumeration
 
 - `feroxbuster -u http://editorial.htb`
-![feroxbuster enumeration](../.medias/editorial/feroxbuster_scan.png)
+![feroxbuster enumeration](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/feroxbuster_scan.png)
 
 ## Let's check the website
 
 - normal website with /upload and /about webpages as suggested by feroxbuster enumeration.
 - only interesting page with user interaction is /upload because it has some input fields and input fields means possibility of vulnerabilities.
-![upload page](../.medias/editorial/upload_page.jpeg)
+![upload page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/upload_page.jpeg)
 
 ### searching for vulnerabilities
 
 #### <b>Is there File upload vulnerability?</b>
 
 Fisrt of all, as soon as i saw file upload function, file upload vulnerabilities striked my mind. We have two buttons on the page: 'preview' and 'Send book info'. Let's upload a image with name `test.jpeg`and intercept the request in burp.
-![uploading image](../.medias/editorial/upload_image.png)
+![uploading image](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/upload_image.png)
 
 Meanwhile, 
 
-![upload request](../.medias/editorial/upload_request.png)
+![upload request](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/upload_request.png)
 
 Here we can see that our image is not going to server, when we click 'Send book info' button, only the data is. Next time i tried 'preview' button and it sent a post request with image and url.
 
-![uploading image](../.medias/editorial/upload_request(2).png)
+![uploading image](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/upload_request(2).png)
 
 and next we can see out image being previewed on hte page.
 
-![image preview](../.medias/editorial/image_preview.png)
+![image preview](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/image_preview.png)
 
 Image is uploaded, but can we access it?
 
 When I tried to right click and open image in new tab, instead of opening, the image was downloaded to my local system. It's name was changed and extension was removed.
-![image downloaded](../.medias/editorial/image_download.png)
+![image downloaded](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/image_download.png)
 
 Since the image is getting downloaded on out local system instead of being previewed, directly uploading the webshell through image will not be executed on the server. Hence, File upload vulnerability might not be the one we are looking for!
 
 #### <b>So what's next?</b>
 
 The post request that was sent to server wheen wwe previewed our image contained url part as well.
-![uploading image](../.medias/editorial/upload_request(2).png)
+![uploading image](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/upload_request(2).png)
 
 So, as a next step we can tamper with the url and test for Server Side Request Forgery(SSRF). i changed the url to `http://localhost` and this responded with an image.
-![localhost](../.medias/editorial/localhost.png)
+![localhost](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/localhost.png)
 
 There must be an specific port that would listen to this request. Let's use intruder to check.
 
-![intruder](../.medias/editorial/intruder(1).png)
+![intruder](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/intruder(1).png)
 
-![intruder payload](../.medias/editorial/imtruder_payload.png)
+![intruder payload](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/imtruder_payload.png)
 
 And ATTAcK. once done, using the filter we can get port 5000 listening. when we send request using url `http://localhost:5000` we obtain a file.
 
-![ssrf exploitation](../.medias/editorial/ssrf_exploitation.png)
+![ssrf exploitation](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/ssrf_exploitation.png)
 
 An as we try that file in browser, the file is downloaded to our localsystem. Let's cat out the file.
 ```bash
@@ -160,7 +160,7 @@ When `/api/latest/metadata/messages/authors` was hit, we got an interesting file
 from this file we have username:dev & password:dev080217_devAPI!@
 
 Since SSH is running on port 22, let's try this creds and hurray, we got logged in as dev. Now easily we can grab user flag using the following commands.
-![user flag](../.medias/editorial/user_flag.png)
+![user flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/user_flag.png)
 
 ## Previlege Escalation
 
@@ -278,8 +278,8 @@ prod@editorial:~$ ls -al /tmp/pwned
 ```
 
 Now we can modify the exploit to get the content from /root/root.txt as 'ext::sh -c cat% /root/root.txt% >% /tmp/root':
-![root flag](../.medias/editorial/root_flag.png)
+![root flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/root_flag.png)
 
 And we are done. Thankyou!
 
-![editorial pwned](../.medias/editorial/editorial_pwned.png)
+![editorial pwned](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/editorial/editorial_pwned.png)

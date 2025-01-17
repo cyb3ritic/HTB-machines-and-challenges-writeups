@@ -1,5 +1,5 @@
 # <center> Busqueda </center>
-<p align="center"><img src="../.medias/busqueda/busqueda_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/busqueda_logo.png"></p>
 
 ## Quick notes:
 - easy linux based machine
@@ -42,7 +42,7 @@ Service Info: Host: searcher.htb; OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ## searching andd exploiting vulnerability
 
 ### web interface
-![web interface](../.medias/busqueda/web_interface.png)
+![web interface](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/web_interface.png)
 
 - input field
 - powered by searchor 2.4.0
@@ -82,10 +82,10 @@ url = http://cody:jh1usoih2bkjaspwe92@gitea.searcher.htb/cody/Searcher_site.git
 
 - May be ssh id ?? cody:jh1usoih2bkjaspwe92
 - new domain: gitea.searcher.htb. Let's add it as well to /etc/hosts and check the web.
-  ![new website at gitea.searcher.htb](../.medias/busqueda/new_website.png)
+  ![new website at gitea.searcher.htb](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/new_website.png)
 
 - let's login with the above credentials for cody.
-![logged in as cody](../.medias/busqueda/loggedin_cody.png)
+![logged in as cody](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/loggedin_cody.png)
 
 - nothing much interesting in website for this user.(another use `administrator` is also present but we don't have access to it right now.)
   
@@ -132,11 +132,11 @@ Usage: /opt/scripts/system-checkup.py docker-inspect <format> <container_name>
 ```bash
 sudo /usr/bin/python3 /opt/scripts/system-checkup.py docker-inspect '{{json .}}' gitea | jq
 ```
-![gitea admin password](../.medias/busqueda/gitea_admin_pass.png)
+![gitea admin password](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/gitea_admin_pass.png)
 
 - couldnot login to mysql with this credentials.
 - try for administrator user in gitea.searcher.htb. -> successfully logged in
-![loggedin as administrator](../.medias/busqueda/loggedin_admin.png)
+![loggedin as administrator](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/loggedin_admin.png)
 
 - In scripts repository, we can find system-checkup.py script whic could be run as sudo by us on the server.
 ```bash
@@ -221,7 +221,7 @@ cat /root/root.txt
 ```
 - this code will directly give me the root flag without having to do much of work. let's try it.
 
-![root flag](../.medias/busqueda/root_pass.png)
+![root flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/root_pass.png)
 
 voila. we got the root flag.
 
