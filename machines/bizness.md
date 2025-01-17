@@ -1,6 +1,6 @@
 # <center> BIZNESS </center>
 
-<p align="center"><img src="../.medias/bizness/bizness_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bizness/bizness_logo.png"></p>
 
 Hello everyone. Let's solve an easy labeled linux based HTB machine named Bizness.
 
@@ -61,7 +61,7 @@ Now we are good to go. we can access the website through our browser. Now let's 
     - ```bash
         sudo nano /etc/hosts
         ```
-    - ![host file](../.medias/bizness/editing_host_file.jpg)
+    - ![host file](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bizness/editing_host_file.jpg)
 
 
 - The website is static. After fuzzing it's input fields we can know that there is no case of parameter injection in the website. So now let's do some enumeration and search some hidden directories.
@@ -70,18 +70,18 @@ Now we are good to go. we can access the website through our browser. Now let's 
     - ```bash
         dirsearch -u https://bizness.htb
         ```
-    - ![dirsearch result](../.medias/bizness/dirsearch_result.jpg)
+    - ![dirsearch result](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bizness/dirsearch_result.jpg)
 
 ## Gaining Initial Access
 
 - the most interesting result I foud was /control/login. (no doubt it's an eye catcher for a hacker 😉). Following the path bizness.htb/control/login took me to an apache ofbiz authentication page. Then I tried fuzzing and bruteforcing some of the passwords for admin user, but it was of no use 😮‍💨.
-![ofbiz authentication page](../.medias/bizness/ofbiz_authentication_page.jpg)
+![ofbiz authentication page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bizness/ofbiz_authentication_page.jpg)
 
 Then I remembered a statement "Google: A hacker's bestfriend", so immediately I googled some ways to bypass the ofbiz authentication. There I came to know about Apache OFBiz Authentication Bypass Vulnerability (CVE-2023-51467).
 - [check this website](https://threatprotect.qualys.com/2023/12/27/apache-ofbiz-authentication-bypass-vulnerability-cve-2023-51467/) to know more about the vulnerability details and exploit analysis.
 
 Luckily I found an exploit on github that triggers <strong>Remote Code Execution (RCE) </strong>. So it's obvious that my next move would be to get a reverse shell using RCE. So I cloned [this Git repo](https://github.com/jakabakos/Apache-OFBiz-Authentication-Bypass.git) to my local system.
-- ![clonning exploit repo](../.medias/bizness/clone_exploit_repo.jpg)
+- ![clonning exploit repo](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bizness/clone_exploit_repo.jpg)
 
 - <strong>Working on payload</strong>
 
@@ -101,7 +101,7 @@ Luckily I found an exploit on github that triggers <strong>Remote Code Execution
 So finally I started my netcat listener on port 1234 with comman d `nc -lnvp 1234` and then executed the final payload in a next tab.
 And voilà, We got a reverse shell.....
 
-- ![getting reverse shell](../.medias/bizness/getting_rev_shell.jpg)
+- ![getting reverse shell](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bizness/getting_rev_shell.jpg)
 
 Let's first stabilize the shell using the following commandd:
 ```bash
