@@ -63,3 +63,39 @@ Cool, only two ports are open, 22 for SSH, and 80 for Apache. Checking on SSH wo
 - checking `nibbleblog` directory, it feels more like a CMS.
 
 ![CMS landing page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/nibbles/cms.png)
+
+
+Time for some directory enumeration. Let's use gobuster.
+
+```bash
+┌──(cyb3ritic㉿kali)-[~]
+└─$ gobuster dir -u http://10.10.10.75/nibbleblog/ -w /usr/share/wordlists/dirb/common.txt -t 100 -q
+/.hta                 (Status: 403) [Size: 301]
+/.htaccess            (Status: 403) [Size: 306]
+/.htpasswd            (Status: 403) [Size: 306]
+/admin                (Status: 301) [Size: 321] [--> http://10.10.10.75/nibbleblog/admin/]
+/admin.php            (Status: 200) [Size: 1401]
+/content              (Status: 301) [Size: 323] [--> http://10.10.10.75/nibbleblog/content/]
+/index.php            (Status: 200) [Size: 2987]
+/languages            (Status: 301) [Size: 325] [--> http://10.10.10.75/nibbleblog/languages/]
+/plugins              (Status: 301) [Size: 323] [--> http://10.10.10.75/nibbleblog/plugins/]
+/README               (Status: 200) [Size: 4628]
+/themes               (Status: 301) [Size: 322] [--> http://10.10.10.75/nibbleblog/themes/] 
+```
+
+Hmm, soo many interesting files. After travelling through them manually, we can get a login page at `/admin.php`. further more, while exploring, we can find username `admin` as a user in `/content/private/users.xml` file.
+
+```xml
+<users>
+<user username="admin">
+<id type="integer">0</id>
+<session_fail_count type="integer">0</session_fail_count>
+<session_date type="integer">1514544131</session_date>
+</users>
+```
+
+- Using some guesses and a fact that in older HTB machines, generally teh name of machine is the password, I was able to login in admin.php with credentials `admin:nibbles`.
+
+
+
+
