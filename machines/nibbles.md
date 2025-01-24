@@ -97,5 +97,5 @@ Hmm, soo many interesting files. After travelling through them manually, we can 
 - Using some guesses and a fact that in older HTB machines, generally teh name of machine is the password, I was able to login in admin.php with credentials `admin:nibbles`.
 
 
-
+# the machine is broken on HTB. so i'll be continuing it after somedays. take a break.
 
