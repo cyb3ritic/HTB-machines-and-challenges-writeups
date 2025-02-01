@@ -1,5 +1,5 @@
 # <center>Two Million</center>
-<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/2million/2million_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/2million/2million_info.png"></p>
 
 Hello homie! Today I'll be walking you through the easy labeled HackTheBox machine named 'Two Million'. The name of this machine was given as two million because it was released when the Hack the box got 2 million users 🎉🎉.
 
