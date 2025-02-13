@@ -1,5 +1,5 @@
 # <center>Lame</center>
-<p align='center'><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/lame_logo.png"></p>
+<p align='center'><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/lame/lame_info.png"></p>
 
 Okay friends, today we will solve an easy labeled linux based HTB machine `Lame`.
 
