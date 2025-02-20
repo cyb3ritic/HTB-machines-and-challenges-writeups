@@ -1,5 +1,5 @@
 # <center>Devvortex</center>
-<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/devvortex_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/devvortex/devvortex_info.png"></p>
 
 Hello everyone. Let's solve an easy labeled linux based HTB machine named Devvortex.
 
