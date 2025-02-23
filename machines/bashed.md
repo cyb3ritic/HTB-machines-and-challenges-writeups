@@ -1,6 +1,6 @@
 # <center>BASHED</center>
 
-<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/bashed_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/bashed/bashed_info.png"></p>
 
 Hey hackers. Let's solve and easy labeled linux based HTB machine named Bashed today. 
 
