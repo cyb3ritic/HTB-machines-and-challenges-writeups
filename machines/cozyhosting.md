@@ -50,8 +50,116 @@ Hmm, So 2 ports open, 22(for SSH) and 80(for http) and http is trying to redirec
 
 ![adding domain to /etc/hosts file](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/domain.png)
 
-Now we are good to go. Let's explore the website running on port 80 `http://cozyhosting.htb`. Here we get a static web page with no functional links. And a login page. Tried fuzzing the login form with some default credentials but couldnot break in. 
+Now we are good to go. Let's explore the website running on port 80 `http://cozyhosting.htb`. Here we get a static web page with no functional links. And a login page. 
 
 ![landing page of website](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/homepage.png)
 
+
+Tried fuzzing the login form with some default credentials but couldnot break in. But the interesting fact is we were having a cookie named `JSESSIONID` stored.
+
 ![login page of website](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/loginpage.png)
+
+
+## Phase 2: Enumeration
+
+Let's try digging into the webpage for some hidden contents. We will try directory bruteforcing, and subdomain/vhost enumeration in this step.
+
+1. Directory Bruteforcing `gobuster dir -u http://cozyhosting.htb -w /usr/share/wordlists/seclists/Discovery/Web-Content/raft-large-directories.txt -t 50`
+    - dir: for directory mode
+    - -u: to specify url 
+    - -w: to specify wordlist
+    - -t: number of threads
+```bash
+┌──(cyb3ritic㉿kali)-[~]
+└─$ gobuster dir -u http://cozyhosting.htb -w /usr/share/wordlists/seclists/Discovery/Web-Content/raft-large-directories.txt -t 50
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://cozyhosting.htb
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                /usr/share/wordlists/seclists/Discovery/Web-Content/raft-large-directories.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/login                (Status: 200) [Size: 4431]
+/admin                (Status: 401) [Size: 97]
+/logout               (Status: 204) [Size: 0]
+/error                (Status: 500) [Size: 73]
+/index                (Status: 200) [Size: 12706]
+/plain]               (Status: 400) [Size: 435]
+/[                    (Status: 400) [Size: 435]
+/]                    (Status: 400) [Size: 435]
+/quote]               (Status: 400) [Size: 435]
+/extension]           (Status: 400) [Size: 435]
+/[0-9]                (Status: 400) [Size: 435]
+/[0-1][0-9]           (Status: 400) [Size: 435]
+/20[0-9][0-9]         (Status: 400) [Size: 435]
+/[2]                  (Status: 400) [Size: 435]
+/index                (Status: 200) [Size: 12706]
+/[2-9]                (Status: 400) [Size: 435]
+/options[]            (Status: 400) [Size: 435]
+Progress: 62284 / 62285 (100.00%)
+===============================================================
+Finished
+===============================================================
+```
+- /login : a login page that we have seen earlier
+- /admin : redirects back to login page 
+- /error : Interesting one. It gives a whitelabel error page.
+    - [white label error page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/errorpage.png)
+
+    Here we are just one google search away from knowing that it is the default error page of Java's spring boot framework. Hmmm.... So the website is using spring boot. Cool. 
+
+    - [Google search for white label error page](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/springboot_errorpage.png)
+
+
+Hey, Do you know Seclists provide a wordlist particularly made for websites using springboot framework? Let's use this wordlist and enumerate the directories again.
+
+```bash
+┌──(cyb3ritic㉿kali)-[~]
+└─$ gobuster dir -u http://cozyhosting.htb -w /usr/share/wordlists/seclists/Discovery/Web-Content/spring-boot.txt -t 50           
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://cozyhosting.htb
+[+] Method:                  GET
+[+] Threads:                 50
+[+] Wordlist:                /usr/share/wordlists/seclists/Discovery/Web-Content/spring-boot.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/actuator/env         (Status: 200) [Size: 4957]
+/actuator/env/lang    (Status: 200) [Size: 487]
+/actuator             (Status: 200) [Size: 634]
+/actuator/env/home    (Status: 200) [Size: 487]
+/actuator/env/path    (Status: 200) [Size: 487]
+/actuator/health      (Status: 200) [Size: 15]
+/actuator/mappings    (Status: 200) [Size: 9938]
+/actuator/sessions    (Status: 200) [Size: 48]
+Progress: 112 / 113 (99.12%)
+/actuator/beans       (Status: 200) [Size: 127224]
+===============================================================
+Finished
+===============================================================
+```
+
+- There you go. The actuator end point is accessible. For all of you who do not know about `actuator`, Spring Boot Actuator is a module that helps you monitor and manage your Spring Boot application. It provides production-ready features like dependency management, auto-configuration, and health indicators
+
+
+## Phase 3: Gaining initial foothold
+
+`http://cozyhosting/actuator/sessions` leaked a session id of a user `kanderson` who i guessed might be logged in. I edited my JSESSIONID cookie to that of `kanderson`
+![session hijacking of kanderson](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/session_hijacking.png)
+
+After this cookie forgery, going back to the landing page show me that i am logged in as `kanderson`. So, we just hijacked the session and we are logged in. Let's try accessing /admin page now.  And voila, we were able to access the admin dashboard.
+
+![admin dashboard](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/admin_dashboard.png)
